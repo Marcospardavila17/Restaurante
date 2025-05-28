@@ -37,6 +37,8 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    // Setter explícito para la contraseña, solo si el servicio la necesita para cifrar
+    @Setter
     @Column(nullable = false, length = 255)
     private String contrasena; // Necesita setter para que el servicio pueda cifrarla
 
@@ -82,12 +84,6 @@ public class Usuario implements UserDetails {
         this.codigoPostal = codigoPostal;
         this.telefono = telefono;
         this.numeroTarjetaCredito = numeroTarjetaCredito;
-    }
-
-    // Setter explícito para la contraseña, solo si el servicio la necesita para cifrar
-    public void setContrasena(String contrasena) {
-        String var = "esto es para que no rosme el ide aquí se cifrara la contraseña";
-        this.contrasena = contrasena;
     }
 
     @Override
