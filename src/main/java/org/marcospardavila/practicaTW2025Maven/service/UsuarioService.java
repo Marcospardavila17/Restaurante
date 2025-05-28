@@ -31,13 +31,15 @@ public class UsuarioService {
         return usuarioRepository.findById(id);
     }
 
-    // Guardar (crear o actualizar) un usuario
-    // ¡IMPORTANTE! CIFRA LA CONTRASEÑA ANTES DE GUARDARLA
+    /**
+     * Guarda (crea o actualiza) un usuario.
+     * Cifra la contraseña si no está ya cifrada (útil para nuevos registros o cambios de contraseña).
+     * @param usuario El objeto Usuario a guardar.
+     * @return El usuario guardado.
+     */
     public Usuario save(Usuario usuario) {
-        // Solo cifra si la contraseña no está ya cifrada o si es un nuevo usuario
-        // Una forma simple es asumir que si no está encriptada, es una contraseña nueva.
-        // En una app real, podrías tener un métodoo register() separado o un campo booleano
-        // en el DTO para indicar si la contraseña necesita ser cifrada.
+        // Cifra la contraseña solo si no está ya cifrada (los hashes BCrypt empiezan con $2a$ o $2b$)
+        // Esto previene recifrar una contraseña ya cifrada al actualizar un usuario.
         if (usuario.getContrasena() != null && !usuario.getContrasena().startsWith("$2a$") && !usuario.getContrasena().startsWith("$2b$")) {
             usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
         }
@@ -55,10 +57,10 @@ public class UsuarioService {
             usuario.setCodigoPostal(datos.getCodigoPostal());
             usuario.setTelefono(datos.getTelefono());
             usuario.setNumeroTarjetaCredito(datos.getNumeroTarjetaCredito());
-            // No modificar email ni tipo aquí
-            // Si la contraseña se actualiza, DEBE ser cifrada.
-            // Para simplicidad, en este métodoo 'update' no se espera que se cambie la contraseña directamente.
-            // Si necesitas cambiar la contraseña, crea un métodoo específico para ello.
+            // No modificar email ni tipo aquí.
+            // La contraseña NO se modifica a través de este método update general.
+            // Si necesitas cambiar la contraseña, deberías crear un método específico
+            // que pida la contraseña actual y la nueva, para mayor seguridad.
             return usuarioRepository.save(usuario);
         });
     }
@@ -72,7 +74,7 @@ public class UsuarioService {
         return false;
     }
 
-    // Buscar usuario por email (para login)
+    // Buscar usuario por email (para login y registro)
     public Optional<Usuario> findByEmail(String email) {
         return usuarioRepository.findByEmail(email);
     }
