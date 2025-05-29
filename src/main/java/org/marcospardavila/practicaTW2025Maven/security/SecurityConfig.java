@@ -1,18 +1,18 @@
-package org.marcospardavila.practicaTW2025Maven.security; // Mantenemos tu paquete original para SecurityConfig
+package org.marcospardavila.practicaTW2025Maven.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager; // Nueva importación
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider; // Nueva importación
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration; // Nueva importación
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy; // Nueva importación para sesiones sin estado
+import org.springframework.security.config.http.SessionCreationPolicy; // Importación para sesiones sin estado
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Nueva importación para añadir el filtro JWT
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Importación para añadir el filtro JWT
 
 @Configuration
 @EnableWebSecurity
@@ -20,45 +20,46 @@ public class SecurityConfig {
 
     // Necesitamos inyectar estos servicios para poder usarlos en la configuración
     private final CustomUserDetailsService customUserDetailsService;
-    private final JwtTokenProvider jwtTokenProvider;
 
-    // Inyección de dependencias por constructor
-    public SecurityConfig(CustomUserDetailsService customUserDetailsService, JwtTokenProvider jwtTokenProvider) {
+    // Inyectar CustomUserDetailsService a través del constructor
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
-        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    // Este bean se encarga de crear y exponer nuestro JwtAuthenticationFilter.
-    // Spring inyectará automáticamente sus dependencias (JwtTokenProvider y CustomUserDetailsService)
-    // gracias al constructor que definimos en JwtAuthenticationFilter.java.
+    // Bean para nuestro filtro JWT personalizado
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService);
+        // Asegúrate de que JwtAuthenticationFilter tiene un constructor adecuado
+        return new JwtAuthenticationFilter(jwtTokenProvider(), customUserDetailsService);
+    }
+
+    // Bean para exponer JwtTokenProvider (si no lo tienes ya como @Component)
+    // Pero ya lo tienes como @Component en tu archivo, así que no es estrictamente necesario aquí.
+    // Solo si necesitas inyectarlo en otro bean de configuración.
+    @Bean
+    public JwtTokenProvider jwtTokenProvider() {
+        return new JwtTokenProvider(); // Spring manejará la inyección de @Value
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Deshabilita la protección CSRF (Cross-Site Request Forgery)
-                // Es esencial deshabilitarlo para APIs RESTful que usan JWT
                 .csrf(AbstractHttpConfigurer::disable)
-                // Configura la gestión de sesiones para que sea SIN ESTADO (stateless).
-                // Esto significa que Spring Security no creará ni usará sesiones HTTP para JWT.
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Configura las reglas de autorización para las diferentes rutas HTTP
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Configura sesiones sin estado
                 .authorizeHttpRequests(authz -> authz
-                        // Permite acceso público a los endpoints de autenticación (ej. /api/auth/login)
-                        .requestMatchers("/api/auth/**").permitAll() // NUEVA LÍNEA: para el login/registro
-                        // Mantenemos tus reglas existentes para /api/**, /test/** y Swagger UI
-                        .requestMatchers("/api/**", "/test/**").permitAll()
+                        // Permitir acceso a los endpoints de autenticación
+                        .requestMatchers("/api/auth/**").permitAll() // <-- ¡IMPORTANTE! Sólo los de autenticación
+                        .requestMatchers("/api/usuarios/**").permitAll()
+                        // Permitir acceso a la documentación de Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/admin/reload-data").permitAll()
-                        // Cualquier otra solicitud debe ser autenticada
+                        // Aquí puedes añadir reglas de autorización por rol, si las necesitas
+                        // .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR") // Ejemplo: Solo administradores pueden gestionar usuarios
+                        // Todas las demás solicitudes requieren autenticación
                         .anyRequest().authenticated()
-                );
-
-        // Añade nuestro filtro JWT personalizado en la cadena de filtros de Spring Security.
-        // Se ejecuta ANTES del filtro UsernamePasswordAuthenticationFilter de Spring.
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                )
+                // Añade nuestro filtro JWT personalizado en la cadena de filtros de Spring Security.
+                // Se ejecuta ANTES del filtro UsernamePasswordAuthenticationFilter de Spring.
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
