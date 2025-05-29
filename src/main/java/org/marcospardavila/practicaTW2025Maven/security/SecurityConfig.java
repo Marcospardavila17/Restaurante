@@ -2,63 +2,81 @@ package org.marcospardavila.practicaTW2025Maven.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // Importar HttpMethod para especificar métodos HTTP
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy; // Importación para sesiones sin estado
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Importación para añadir el filtro JWT
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Necesitamos inyectar estos servicios para poder usarlos en la configuración
     private final CustomUserDetailsService customUserDetailsService;
 
-    // Inyectar CustomUserDetailsService a través del constructor
     public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
     }
 
-    // Bean para nuestro filtro JWT personalizado
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        // Asegúrate de que JwtAuthenticationFilter tiene un constructor adecuado
         return new JwtAuthenticationFilter(jwtTokenProvider(), customUserDetailsService);
     }
 
-    // Bean para exponer JwtTokenProvider (si no lo tienes ya como @Component)
-    // Pero ya lo tienes como @Component en tu archivo, así que no es estrictamente necesario aquí.
-    // Solo si necesitas inyectarlo en otro bean de configuración.
     @Bean
     public JwtTokenProvider jwtTokenProvider() {
-        return new JwtTokenProvider(); // Spring manejará la inyección de @Value
+        return new JwtTokenProvider();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Configura sesiones sin estado
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        // Permitir acceso a los endpoints de autenticación
-                        .requestMatchers("/api/auth/**").permitAll() // <-- ¡IMPORTANTE! Sólo los de autenticación
-                        .requestMatchers("/api/usuarios/**").permitAll()
+                        // Permitir acceso a los endpoints de autenticación (registro y login)
+                        .requestMatchers("/api/auth/**").permitAll()
                         // Permitir acceso a la documentación de Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/admin/reload-data").permitAll()
-                        // Aquí puedes añadir reglas de autorización por rol, si las necesitas
-                        // .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR") // Ejemplo: Solo administradores pueden gestionar usuarios
-                        // Todas las demás solicitudes requieren autenticación
+
+                        // === REGLAS DE ACCESO A LA CARTA (PÚBLICAS) ===
+                        // Cualquiera puede ver productos (GET)
+                        .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
+                        // Cualquiera puede ver ingredientes (GET)
+                        .requestMatchers(HttpMethod.GET, "/api/ingredientes", "/api/ingredientes/**").permitAll()
+
+                        // === REGLAS DE AUTORIZACIÓN BASADAS EN ROLES (EJEMPLOS) ===
+                        // USUARIOS: Solo los administradores pueden gestionar usuarios (CRUD completo)
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR") // Simplificado para todos los métodos
+
+                        // PRODUCTOS: Solo los administradores o personal pueden añadir/modificar/eliminar productos
+                        .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "PERSONAL")
+                        .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasAnyRole("ADMINISTRADOR", "PERSONAL")
+                        .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasAnyRole("ADMINISTRADOR", "PERSONAL")
+                        // INGREDIENTES: Solo los administradores o personal pueden gestionar ingredientes
+                        .requestMatchers("/api/ingredientes/**").hasAnyRole("ADMINISTRADOR", "PERSONAL") // CRUD para POST, PUT, DELETE
+
+                        // PEDIDOS:
+                        // Clientes pueden crear pedidos
+                        .requestMatchers(HttpMethod.POST, "/api/pedidos").hasRole("CLIENTE")
+                        // Clientes pueden ver SUS propios pedidos (la lógica de "sus propios" debe estar en el controlador)
+                        // Para este ejemplo, permitimos a los CLIENTES acceder a la ruta de pedidos de cliente.
+                        .requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasRole("CLIENTE")
+                        // Personal y Administradores pueden gestionar todos los pedidos (CRUD completo)
+                        .requestMatchers("/api/pedidos/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
+                        .requestMatchers("/api/detallepedidos/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
+                        .requestMatchers("/api/personalizaciones/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
+
+                        // Cualquier otra solicitud que no haya sido especificada, requiere autenticación
                         .anyRequest().authenticated()
                 )
-                // Añade nuestro filtro JWT personalizado en la cadena de filtros de Spring Security.
-                // Se ejecuta ANTES del filtro UsernamePasswordAuthenticationFilter de Spring.
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -69,20 +87,16 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Bean para exponer el AuthenticationManager, que se usará para autenticar a los usuarios
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // Bean para configurar el DaoAuthenticationProvider.
-    // Este proveedor es el que sabe cómo cargar los detalles del usuario (usando CustomUserDetailsService)
-    // y cómo comparar las contraseñas (usando PasswordEncoder).
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(customUserDetailsService); // Usa nuestro CustomUserDetailsService
-        authProvider.setPasswordEncoder(passwordEncoder()); // Usa nuestro PasswordEncoder
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 }
