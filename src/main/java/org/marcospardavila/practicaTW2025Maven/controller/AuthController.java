@@ -3,7 +3,7 @@ package org.marcospardavila.practicaTW2025Maven.controller;
 import org.marcospardavila.practicaTW2025Maven.model.Usuario;
 import org.marcospardavila.practicaTW2025Maven.payload.JwtAuthenticationResponse;
 import org.marcospardavila.practicaTW2025Maven.payload.LoginRequest;
-import org.marcospardavila.practicaTW2025Maven.payload.RegisterRequest;
+import org.marcospardavila.practicaTW2025Maven.payload.RegisterRequest; // Importa el DTO RegisterRequest
 import org.marcospardavila.practicaTW2025Maven.security.JwtTokenProvider;
 import org.marcospardavila.practicaTW2025Maven.service.UsuarioService;
 import org.springframework.http.HttpStatus;
@@ -12,12 +12,15 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder; // <-- Asegúrate de importar esto
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -27,17 +30,20 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UsuarioService usuarioService;
-    private final PasswordEncoder passwordEncoder; // <-- Inyecta PasswordEncoder aquí
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider tokenProvider, UsuarioService usuarioService, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthenticationManager authenticationManager,
+                          JwtTokenProvider tokenProvider,
+                          UsuarioService usuarioService,
+                          PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.usuarioService = usuarioService;
-        this.passwordEncoder = passwordEncoder; // <-- Inicialízalo aquí
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthenticationResponse> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -45,38 +51,44 @@ public class AuthController {
                             loginRequest.getContrasena()
                     )
             );
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
             String jwt = tokenProvider.generateToken(authentication);
-            // CORRECCIÓN: Pasar ambos argumentos al constructor
-            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, "Bearer"));
+
+            Optional<Usuario> usuarioOpt = usuarioService.findByEmail(loginRequest.getEmail());
+            if (usuarioOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("message", "Error interno: usuario no encontrado después de autenticación exitosa."));
+            }
+            Usuario usuario = usuarioOpt.get();
+
+            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, "Bearer", usuario.getTipo(), usuario.getNombre(), usuario.getId(), usuario.getEmail()));
+
         } catch (Exception e) {
-            // Manejo de errores de autenticación
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            System.err.println("Error durante la autenticación: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("message", "Credenciales inválidas."));
         }
     }
 
+    /**
+     * Endpoint para el registro de nuevos usuarios (clientes por defecto).
+     * Recibe un DTO RegisterRequest, codifica la contraseña y guarda el usuario en la base de datos.
+     * @param registerRequest DTO con los datos del nuevo usuario.
+     * @return ResponseEntity con un mensaje de éxito o un error 400 si el email ya está registrado.
+     */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
-        // Comprobar si el email ya está en uso
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) { // <-- ¡CAMBIO CRÍTICO AQUÍ!
+        // 1. Verificar si el email ya está registrado
         if (usuarioService.findByEmail(registerRequest.getEmail()).isPresent()) {
-            return new ResponseEntity<>("El email ya está registrado.", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "El email ya está registrado."));
         }
 
-        // Cifrar la contraseña antes de guardar el usuario
-        // Asegúrate de que tu UsuarioService.save() maneje el cifrado o hazlo aquí.
-        // Si UsuarioService.save() ya lo cifra, simplemente pasa la contraseña sin cifrar.
-        // Considerando que tu UsuarioService tiene un método 'save' que guarda el Usuario
-        // y que tu PasswordEncoder está disponible.
-
-        // Crear una instancia de Usuario a partir del RegisterRequest
-        Usuario nuevoUsuario = Usuario.builder()
-                .tipo(registerRequest.getTipo()) // Asegúrate de que el 'tipo' venga en el RegisterRequest
+        // 2. Crear un nuevo objeto Usuario usando el builder "usuarioBuilder".
+        // Este builder (en Usuario.java) asignará automáticamente el tipo "Cliente".
+        Usuario nuevoUsuario = Usuario.usuarioBuilder()
+                .tipo("Cliente")
                 .nombre(registerRequest.getNombre())
                 .apellidos(registerRequest.getApellidos())
                 .email(registerRequest.getEmail())
-                .contrasena(passwordEncoder.encode(registerRequest.getContrasena())) // Cifrar la contraseña aquí
+                .contrasena(passwordEncoder.encode(registerRequest.getContrasena())) // Cifra la contraseña aquí
                 .direccion(registerRequest.getDireccion())
                 .poblacion(registerRequest.getPoblacion())
                 .provincia(registerRequest.getProvincia())
@@ -85,10 +97,10 @@ public class AuthController {
                 .numeroTarjetaCredito(registerRequest.getNumeroTarjetaCredito())
                 .build();
 
-        // Guarda el nuevo usuario
-        Usuario usuarioGuardado = usuarioService.save(nuevoUsuario);
+        // 3. Guarda el nuevo usuario. El UsuarioService no necesita cifrarla de nuevo.
+        Usuario savedUser = usuarioService.save(nuevoUsuario);
 
-        // Autenticar automáticamente al usuario recién registrado y devolver un JWT
+        // 4. Autenticar automáticamente al usuario recién registrado y devolver un JWT
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         registerRequest.getEmail(),
@@ -96,9 +108,11 @@ public class AuthController {
                 )
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         String jwt = tokenProvider.generateToken(authentication);
-        // CORRECCIÓN: Pasar ambos argumentos al constructor
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, "Bearer"));
+
+        // 5. Devuelve una respuesta con el token JWT y otros datos relevantes
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new JwtAuthenticationResponse(jwt, "Bearer", savedUser.getTipo(), savedUser.getNombre(), savedUser.getId(), savedUser.getEmail())
+        );
     }
 }

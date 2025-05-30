@@ -1,10 +1,13 @@
-package org.marcospardavila.practicaTW2025Maven.payload; // O el paquete donde tengas tus DTOs
+package org.marcospardavila.practicaTW2025Maven.payload;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data // Lombok para getters, setters, toString, equals, hashCode
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequest {
-    private String tipo; // Cliente, Personal, Administrador
     private String nombre;
     private String apellidos;
     private String email;

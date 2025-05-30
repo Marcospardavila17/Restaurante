@@ -30,10 +30,10 @@ INSERT INTO INGREDIENTE (id, nombre, cantidad, unidad) VALUES
 
 -- USUARIO (debe ir antes de PEDIDO)
 INSERT INTO USUARIO (id, tipo, nombre, apellidos, email, contrasena, direccion, poblacion, provincia, codigo_postal, telefono, numero_tarjeta_credito) VALUES
-                                                                                                                                                           (1, 'Cliente', 'Juan', 'Perez', 'juan@example.com', '$2a$10$cliente123hash', 'Calle Mayor 1', 'Madrid', 'Madrid', '28001', '600123123', '1111222233334444'),
+                                                                                                                                                           (1, 'Administrador', 'Admin', 'Sistema', 'admin@restaurante.com', '$2a$10$TU_CONTRASEÑA_CIFRADA_AQUI', NULL, NULL, NULL, NULL, NULL, NULL),
                                                                                                                                                            (2, 'Cliente', 'Laura', 'Garcia', 'laura@example.com', '$2a$10$cliente456hash', 'Avenida Sol 2', 'Sevilla', 'Sevilla', '41001', '600456456', '5555666677778888'),
                                                                                                                                                            (3, 'Personal', 'Ana', 'Gomez', 'ana@restaurante.com', '$2a$10$empleado123hash', 'Calle Luna 3', 'Madrid', 'Madrid', '28002', '600789789', NULL),
-                                                                                                                                                           (4, 'Administrador', 'Carlos', 'Ruiz', 'admin@restaurante.com', '$2a$10$admin123hash', NULL, NULL, NULL, NULL, NULL, NULL);
+                                                                                                                                                           (4, 'Administrador', 'Carlos', 'Ruiz', 'carlos.ruiz@restaurante.com', '$2a$10$admin123hash', NULL, NULL, NULL, NULL, NULL, NULL); -- Email cambiado para ser único
 
 -- PRODUCTO (debe ir despues de INGREDIENTE)
 INSERT INTO PRODUCTO (id, nombre, descripcion, precio, categoria, imagen, ingredientes, alergenos, tiempo_preparacion) VALUES

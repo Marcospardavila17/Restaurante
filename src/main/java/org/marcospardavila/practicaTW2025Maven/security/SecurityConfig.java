@@ -2,7 +2,7 @@ package org.marcospardavila.practicaTW2025Maven.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Importar HttpMethod para especificar métodos HTTP
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -14,25 +14,26 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+// import org.springframework.beans.factory.annotation.Autowired; // Ya no es necesario aquí
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
+    // private final JwtAuthenticationFilter jwtAuthenticationFilter; // ¡Eliminar esta inyección del constructor!
 
+    // Constructor sin JwtAuthenticationFilter
+    // Spring inyectará CustomUserDetailsService automáticamente si es el único constructor o si se usa @Autowired
     public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
+        // this.jwtAuthenticationFilter = jwtAuthenticationFilter; // Eliminar esta asignación
     }
 
+    // Este bean es correcto, Spring inyectará JwtTokenProvider y CustomUserDetailsService aquí
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider(), customUserDetailsService);
-    }
-
-    @Bean
-    public JwtTokenProvider jwtTokenProvider() {
-        return new JwtTokenProvider();
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CustomUserDetailsService customUserDetailsService) {
+        return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService);
     }
 
     @Bean
@@ -41,43 +42,37 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        // Permitir acceso a los endpoints de autenticación (registro y login)
+                        // Rutas públicas (no requieren autenticación)
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Permitir acceso a la documentación de Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/admin/reload-data").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ingredientes/**").permitAll()
 
-                        // === REGLAS DE ACCESO A LA CARTA (PÚBLICAS) ===
-                        // Cualquiera puede ver productos (GET)
-                        .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
-                        // Cualquiera puede ver ingredientes (GET)
-                        .requestMatchers(HttpMethod.GET, "/api/ingredientes", "/api/ingredientes/**").permitAll()
+                        // Rutas protegidas por rol (requieren autenticación y rol específico)
+                        // Gestión de usuarios (solo ADMINISTRADOR)
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
 
-                        // === REGLAS DE AUTORIZACIÓN BASADAS EN ROLES (EJEMPLOS) ===
-                        // USUARIOS: Solo los administradores pueden gestionar usuarios (CRUD completo)
-                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR") // Simplificado para todos los métodos
+                        // Gestión de productos (PERSONAL y ADMINISTRADOR)
+                        .requestMatchers("/api/productos/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
 
-                        // PRODUCTOS: Solo los administradores o personal pueden añadir/modificar/eliminar productos
-                        .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "PERSONAL")
-                        .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasAnyRole("ADMINISTRADOR", "PERSONAL")
-                        .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasAnyRole("ADMINISTRADOR", "PERSONAL")
-                        // INGREDIENTES: Solo los administradores o personal pueden gestionar ingredientes
-                        .requestMatchers("/api/ingredientes/**").hasAnyRole("ADMINISTRADOR", "PERSONAL") // CRUD para POST, PUT, DELETE
+                        // Gestión de ingredientes (PERSONAL y ADMINISTRADOR)
+                        .requestMatchers("/api/ingredientes/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
 
-                        // PEDIDOS:
-                        // Clientes pueden crear pedidos
+                        // Gestión de pedidos
+                        // Clientes pueden crear pedidos (POST)
                         .requestMatchers(HttpMethod.POST, "/api/pedidos").hasRole("CLIENTE")
-                        // Clientes pueden ver SUS propios pedidos (la lógica de "sus propios" debe estar en el controlador)
-                        // Para este ejemplo, permitimos a los CLIENTES acceder a la ruta de pedidos de cliente.
+                        // Clientes pueden ver sus propios pedidos (GET)
                         .requestMatchers(HttpMethod.GET, "/api/pedidos/cliente/**").hasRole("CLIENTE")
-                        // Personal y Administradores pueden gestionar todos los pedidos (CRUD completo)
+                        // Personal y Administradores gestionan todos los pedidos (CRUD)
                         .requestMatchers("/api/pedidos/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
                         .requestMatchers("/api/detallepedidos/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
                         .requestMatchers("/api/personalizaciones/**").hasAnyRole("PERSONAL", "ADMINISTRADOR")
 
-                        // Cualquier otra solicitud que no haya sido especificada, requiere autenticación
+                        // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                // Spring resolverá las dependencias de jwtAuthenticationFilter() automáticamente.
+                .addFilterBefore(jwtAuthenticationFilter(null, null), UsernamePasswordAuthenticationFilter.class); // <-- ¡CORRECCIÓN CLAVE AQUÍ!
 
         return http.build();
     }

@@ -10,9 +10,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-@Getter // Lombok para generar getters para todos los campos
-@NoArgsConstructor // Genera constructor sin argumentos de Lombok
-@AllArgsConstructor // Genera constructor con todos los argumentos, incluyendo 'id'
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor 
 @Builder // Para poder construir objetos Usuario más fácilmente sin todos los campos (como id)
 @Entity
 @Table(name = "USUARIO")
@@ -22,7 +22,6 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Estos campos deberían ser establecidos en el constructor o a través de un builder
     @Column(nullable = false, length = 20)
     private String tipo; // Cliente, Personal, Administrador
 
@@ -37,43 +36,41 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    // Setter explícito para la contraseña, solo si el servicio la necesita para cifrar
     @Setter
     @Column(nullable = false, length = 255)
     private String contrasena; // Necesita setter para que el servicio pueda cifrarla
 
-    // Estos campos son los que normalmente podrían ser modificados por el usuario
-    @Setter // Lombok para generar setter solo para 'direccion'
+    @Setter
     @Column(length = 255)
     private String direccion;
 
-    @Setter // Lombok para generar setter solo para 'poblacion'
+    @Setter
     @Column(length = 100)
     private String poblacion;
 
-    @Setter // Lombok para generar setter solo para 'provincia'
+    @Setter
     @Column(length = 100)
     private String provincia;
 
-    @Setter // Lombok para generar setter solo para 'codigoPostal'
+    @Setter
     @Column(name = "codigo_postal", length = 10)
     private String codigoPostal;
 
-    @Setter // Lombok para generar setter solo para 'telefono'
+    @Setter
     @Column(length = 20)
     private String telefono;
 
-    @Setter // Lombok para generar setter solo para 'numeroTarjetaCredito'
+    @Setter
     @Column(name = "numero_tarjeta_credito", length = 20)
     private String numeroTarjetaCredito;
 
-    // Constructor @Builder para crear instancias sin ID (para nuevas entidades)
-    // El @AllArgsConstructor manejará el constructor con ID para entidades existentes
+    // Constructor @Builder para crear instancias sin ID y con tipo "Cliente" por defecto.
+    // Este es el builder principal para el registro de clientes.
     @Builder(builderMethodName = "usuarioBuilder")
     public Usuario(String tipo, String nombre, String apellidos, String email, String contrasena,
                    String direccion, String poblacion, String provincia, String codigoPostal,
                    String telefono, String numeroTarjetaCredito) {
-        this.tipo = tipo;
+        this.tipo = tipo; 
         this.nombre = nombre;
         this.apellidos = apellidos;
         this.email = email;
@@ -85,6 +82,7 @@ public class Usuario implements UserDetails {
         this.telefono = telefono;
         this.numeroTarjetaCredito = numeroTarjetaCredito;
     }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
