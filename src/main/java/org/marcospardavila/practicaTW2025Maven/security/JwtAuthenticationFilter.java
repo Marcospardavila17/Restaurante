@@ -4,34 +4,47 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private HttpServletRequest request;
+    private HttpServletResponse response;
+    private FilterChain filterChain;
 
-    // Use constructor injection instead of @Autowired fields
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CustomUserDetailsService customUserDetailsService) {
+    // Constructor injection
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   CustomUserDetailsService customUserDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.customUserDetailsService = customUserDetailsService;
     }
 
     /**
-     * Este método se ejecuta una vez por cada solicitud HTTP.
+     * Este métoodo se ejecuta una vez por cada solicitud HTTP.
      * Intercepta la solicitud para validar el token JWT.
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        this.request = request;
+        this.response = response;
+        this.filterChain = filterChain;
         try {
             // 1. Obtener el token JWT de la solicitud
             String jwt = getJwtFromRequest(request);
@@ -46,8 +59,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 5. Crear un objeto de autenticación
                 // Este objeto representa la autenticación del usuario y sus roles/autoridades.
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 6. Establecer la autenticación en el contexto de seguridad de Spring
@@ -64,17 +79,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Extrae el token JWT de la cabecera "Authorization" de la solicitud.
-     * El token se espera en el formato: "Bearer <TOKEN_JWT>"
+     * El token se espera en el formato: "Bearer <token>"
      * @param request La solicitud HTTP.
      * @return El token JWT o null si no se encuentra.
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        // Comprobar si la cabecera Authorization contiene el prefijo "Bearer "
+
+        // Comprobar si la cabecera Authorization contiene el prefijo "Bearer"
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             // Extraer el token (eliminar el prefijo "Bearer ")
             return bearerToken.substring(7);
         }
+
         return null;
     }
 }

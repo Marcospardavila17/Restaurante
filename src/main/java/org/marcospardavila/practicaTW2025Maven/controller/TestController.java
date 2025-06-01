@@ -1,6 +1,7 @@
 package org.marcospardavila.practicaTW2025Maven.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,7 +12,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
 
-@RestController
+@Controller
 @RequestMapping("/test")
 public class TestController {
 
@@ -100,30 +101,9 @@ public class TestController {
     }
 
 
-    @GetMapping("/usuarios")
-    public List<Map<String, Object>> obtenerUsuarios() {
-        List<Map<String, Object>> usuarios = new ArrayList<>();
-
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM USUARIO LIMIT 10")) {
-
-            while (rs.next()) {
-                Map<String, Object> usuario = new HashMap<>();
-                usuario.put("id", rs.getInt("id"));
-                usuario.put("nombre", rs.getString("nombre"));
-                usuario.put("apellidos", rs.getString("apellidos"));
-                usuario.put("email", rs.getString("email"));
-                usuario.put("tipo", rs.getString("tipo"));
-                usuarios.add(usuario);
-            }
-
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            usuarios.add(error);
-        }
-
-        return usuarios;
+    @GetMapping("/test")
+    public String test() {
+        System.out.println("CONTROLADOR EJECUTADO"); // Para traza
+        return "test";
     }
 }
