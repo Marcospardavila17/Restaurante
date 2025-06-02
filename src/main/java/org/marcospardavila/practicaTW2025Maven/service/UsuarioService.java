@@ -13,21 +13,23 @@ import java.util.Optional;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder; // Inyectar PasswordEncoder
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) { // Modificar constructor
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder; // Asignar
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Listar todos los usuarios
     public List<Usuario> findAll() {
+        System.out.println("UsuarioService Listando todos los usuarios");
         return usuarioRepository.findAll();
     }
 
     // Buscar usuario por ID
     public Optional<Usuario> findById(Integer id) {
+        System.out.println("UsuarioService Buscando usuario por ID: " + id);
         return usuarioRepository.findById(id);
     }
 
@@ -38,16 +40,16 @@ public class UsuarioService {
      * @return El usuario guardado.
      */
     public Usuario save(Usuario usuario) {
+        System.out.println("UsuarioService Guardando usuario: " + usuario);
         // Cifra la contraseña solo si no está ya cifrada (los hashes BCrypt empiezan con $2a$ o $2b$)
-        // Esto previene recifrar una contraseña ya cifrada al actualizar un usuario.
         if (usuario.getContrasena() != null && !usuario.getContrasena().startsWith("$2a$") && !usuario.getContrasena().startsWith("$2b$")) {
             usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
         }
         return usuarioRepository.save(usuario);
     }
 
-    // Actualizar datos personales
     public Optional<Usuario> update(Integer id, Usuario datos) {
+        System.out.println("UsuarioService Actualizando usuario: " + datos);
         return usuarioRepository.findById(id).map(usuario -> {
             usuario.setNombre(datos.getNombre());
             usuario.setApellidos(datos.getApellidos());
@@ -57,16 +59,19 @@ public class UsuarioService {
             usuario.setCodigoPostal(datos.getCodigoPostal());
             usuario.setTelefono(datos.getTelefono());
             usuario.setNumeroTarjetaCredito(datos.getNumeroTarjetaCredito());
-            // No modificar email ni tipo aquí.
-            // La contraseña NO se modifica a través de este método update general.
-            // Si necesitas cambiar la contraseña, deberías crear un método específico
-            // que pida la contraseña actual y la nueva, para mayor seguridad.
-            return usuarioRepository.save(usuario);
+
+            if (datos.getContrasena() != null && !datos.getContrasena().isEmpty()) {
+                usuario.setContrasena(datos.getContrasena());
+            }
+
+            return this.save(usuario);
         });
     }
 
+
     // Eliminar usuario
     public boolean delete(Integer id) {
+        System.out.println("UsuarioService Eliminando usuario con ID: " + id);
         if (usuarioRepository.existsById(id)) {
             usuarioRepository.deleteById(id);
             return true;
@@ -76,6 +81,7 @@ public class UsuarioService {
 
     // Buscar usuario por email (para login y registro)
     public Optional<Usuario> findByEmail(String email) {
+        System.out.println("UsuarioService Buscando usuario por email: " + email);
         return usuarioRepository.findByEmail(email);
     }
 }

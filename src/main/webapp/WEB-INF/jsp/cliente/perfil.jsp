@@ -11,13 +11,11 @@
 </head>
 <body class="bg-light">
 
-<!-- ✅ INCLUIR HEADER COMO COMPONENTE -->
 <jsp:include page="../components/header.jsp" />
 
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-lg-8 col-xl-7">
-      <!-- Card principal -->
       <div class="card shadow">
         <div class="card-header bg-success text-white text-center py-3">
           <h3 class="mb-0">
@@ -27,7 +25,6 @@
         </div>
 
         <div class="card-body p-4">
-          <!-- Información del usuario (solo lectura) -->
           <div class="row mb-4">
             <div class="col-12">
               <div class="alert alert-info">
@@ -69,7 +66,7 @@
               </div>
             </div>
 
-            <!-- Email (solo lectura) -->
+            <!-- Email -->
             <div class="row mb-4">
               <div class="col-12">
                 <h5 class="text-success mb-3">
@@ -211,7 +208,6 @@
           </div>
         </div>
 
-        <!-- Footer del card -->
         <div class="card-footer bg-light text-center py-3">
           <a href="${pageContext.request.contextPath}/" class="text-success text-decoration-none">
             <i class="fas fa-arrow-left me-1"></i>Volver al menú
@@ -222,11 +218,8 @@
   </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- ✅ JS DEL HEADER SEPARADO -->
 <script src="<c:url value='/js/header.js' />"></script>
-<!-- ✅ JS DEL PERFIL SEPARADO -->
 <script src="<c:url value='/js/perfil.js' />"></script>
 </body>
 </html>
