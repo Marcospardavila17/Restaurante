@@ -1,12 +1,37 @@
-// menu.js
+// menu.js - VERSIÓN CON LOGS DE DEPURACIÓN
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== MENU.JS CARGADO ===');
+
+    // ✅ NO HAY REDIRECCIONES AUTOMÁTICAS - ESTO ESTÁ BIEN
+    fetch('/api/productos')
+        .then(resp => {
+            console.log('Respuesta de /api/productos:', resp.status);
+            if (!resp.ok) throw new Error('No se pudo cargar el menú');
+            return resp.json();
+        })
+        .then(productos => {
+            console.log('Productos cargados:', productos.length);
+            renderMenu(productos);
+        })
+        .catch(err => {
+            console.error('Error al cargar productos:', err);
+            document.getElementById('menu-container').innerHTML =
+                `<div class="alert alert-danger">Error al cargar el menú: ${err.message}</div>`;
+        });
+});
 
 function renderMenu(productos) {
+    console.log('Renderizando menú con', productos.length, 'productos');
+
     // Agrupar productos por categoría
     const categorias = {};
     productos.forEach(p => {
         if (!categorias[p.categoria]) categorias[p.categoria] = [];
         categorias[p.categoria].push(p);
     });
+
+    console.log('Categorías encontradas:', Object.keys(categorias));
 
     let html = '';
     Object.keys(categorias).forEach(cat => {
@@ -33,18 +58,12 @@ function renderMenu(productos) {
         });
         html += '</div>';
     });
-    document.getElementById('menu-container').innerHTML = html;
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/productos')
-        .then(resp => {
-            if (!resp.ok) throw new Error('No se pudo cargar el menú');
-            return resp.json();
-        })
-        .then(renderMenu)
-        .catch(err => {
-            document.getElementById('menu-container').innerHTML =
-                `<div class="alert alert-danger">Error al cargar el menú: ${err.message}</div>`;
-        });
-});
+    const menuContainer = document.getElementById('menu-container');
+    if (menuContainer) {
+        menuContainer.innerHTML = html;
+        console.log('✅ Menú renderizado correctamente');
+    } else {
+        console.error('❌ No se encontró el elemento menu-container');
+    }
+}

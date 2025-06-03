@@ -1,97 +1,76 @@
-// login.js
+// login.js - VERSIÓN SIMPLIFICADA CON LOGS
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== LOGIN CARGADO ===');
     const loginForm = document.getElementById('loginForm');
-    const mensajeError = document.getElementById('mensajeError');
-    const emailInput = document.getElementById('email');
-    const contrasenaInput = document.getElementById('contrasena');
-
-    // Función principal de login
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const email = emailInput.value;
-        const contrasena = contrasenaInput.value;
-
-        // Limpiar mensajes anteriores
-        clearErrorMessage();
-
-        // Validación básica
-        if (!email || !contrasena) {
-            showErrorMessage('Por favor, completa todos los campos.');
-            return;
-        }
-
-        // Enviar petición de login
-        authenticateUser(email, contrasena);
-    });
-
-    // Función para autenticar usuario
-    function authenticateUser(email, contrasena) {
-        fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, contrasena })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Credenciales inválidas');
-                }
-                return response.json();
-            })
-            .then(data => {
-                handleLoginSuccess(data);
-            })
-            .catch(error => {
-                handleLoginError(error);
-            });
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
     }
-
-    // Función para manejar login exitoso
-    function handleLoginSuccess(data) {
-        // Guardar datos de autenticación
-        localStorage.setItem('jwt', data.accessToken);
-        localStorage.setItem('userType', data.tipoUsuario);
-        localStorage.setItem('userName', data.nombreUsuario);
-
-        // Redirigir según el tipo de usuario
-        redirectUser(data.tipoUsuario);
-    }
-
-    // Función para manejar errores de login
-    function handleLoginError(error) {
-        showErrorMessage(error.message || 'Error al iniciar sesión. Inténtalo de nuevo.');
-    }
-
-    // Función para redirigir según tipo de usuario
-    function redirectUser(tipoUsuario) {
-        let redirectUrl = '/menu'; // Por defecto al menú
-
-        if (tipoUsuario === 'Cliente') {
-            redirectUrl = '/menu';
-        } else if (tipoUsuario === 'Personal') {
-            redirectUrl = '/personal/pedidos';
-        } else if (tipoUsuario === 'Administrador') {
-            redirectUrl = '/admin/usuarios';
-        }
-
-        window.location.href = redirectUrl;
-    }
-
-    // Funciones auxiliares para mostrar mensajes
-    function showErrorMessage(message) {
-        mensajeError.textContent = message;
-        mensajeError.style.display = 'block';
-    }
-
-    function clearErrorMessage() {
-        mensajeError.textContent = '';
-        mensajeError.style.display = 'none';
-    }
-
-    // Limpiar mensaje de error cuando el usuario empiece a escribir
-    emailInput.addEventListener('input', clearErrorMessage);
-    contrasenaInput.addEventListener('input', clearErrorMessage);
 });
+
+function handleLogin(event) {
+    event.preventDefault();
+    console.log('=== INICIANDO LOGIN ===');
+
+    const email = document.getElementById('email').value;
+    const contrasena = document.getElementById('contrasena').value;
+
+    console.log('Email:', email);
+
+    const loginData = {
+        email: email,
+        contrasena: contrasena
+    };
+
+    fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(loginData)
+    })
+        .then(response => {
+            console.log('Respuesta del servidor:', response.status);
+            if (!response.ok) {
+                throw new Error('Credenciales incorrectas');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('=== LOGIN EXITOSO ===');
+            console.log('Datos recibidos:', {
+                hasToken: !!data.accessToken,
+                userName: data.userName,
+                userType: data.userType
+            });
+
+            // Guardar datos en localStorage
+            localStorage.setItem('jwt', data.accessToken);
+            localStorage.setItem('userName', data.userName);
+            localStorage.setItem('userType', data.userType);
+
+            console.log('=== DATOS GUARDADOS ===');
+            console.log('JWT guardado:', !!localStorage.getItem('jwt'));
+            console.log('UserName guardado:', localStorage.getItem('userName'));
+            console.log('UserType guardado:', localStorage.getItem('userType'));
+
+            // ✅ REDIRECCIÓN SIMPLE SIN PARÁMETROS
+            console.log('Redirigiendo a página principal...');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
+        })
+        .catch(error => {
+            console.error('❌ Error en login:', error);
+            showError(error.message);
+        });
+}
+
+function showError(message) {
+    console.log('Mostrando error:', message);
+    const errorDiv = document.getElementById('mensajeError');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+}

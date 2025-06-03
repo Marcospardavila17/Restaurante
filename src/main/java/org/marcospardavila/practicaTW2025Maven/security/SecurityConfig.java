@@ -44,13 +44,14 @@ public class SecurityConfig {
         return new ProviderManager(authenticationProvider);
     }
 
-    // Configuración de seguridad HTTP
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("SecurityConfig: Configurando filtros");
+        System.out.println("JwtAuthenticationFilter: " + jwtAuthenticationFilter);
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // ✅ AÑADIR FILTRO JWT ANTES DE UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // Rutas públicas (sin autenticación)
@@ -60,6 +61,8 @@ public class SecurityConfig {
                                 "/", "/menu", "/api/productos/**",
                                 "/test", "/test/**", "/WEB-INF/jsp/**"
                         ).permitAll()
+                        .requestMatchers("/cliente/perfil").permitAll()
+                        .requestMatchers("/admin/usuarios", "/personal/pedidos").permitAll()
                         // Rutas protegidas por rol
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/personal/**").hasRole("PERSONAL")

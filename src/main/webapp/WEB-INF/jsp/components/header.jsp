@@ -49,7 +49,7 @@
                 </a>
             </li>
             <li class="nav-item admin-only" style="display: none;">
-                <a class="nav-link" href="${pageContext.request.contextPath}/admin/usuarios">
+                <a class="nav-link" href="#" onclick="irAUsuarios(); return false;">
                     <i class="fas fa-users me-1"></i>Usuarios
                 </a>
             </li>
@@ -70,29 +70,31 @@
             </li>
 
             <!-- Authenticated user dropdown -->
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user-circle me-2 fs-5"></i>
-                <span id="user-name">Usuario</span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-                <li>
-                    <h6 class="dropdown-header">
-                        <i class="fas fa-user me-1"></i>Mi Cuenta
-                    </h6>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="${pageContext.request.contextPath}/cliente/perfil">
-                        <i class="fas fa-edit me-2"></i>Mi Perfil
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <button type="button" class="dropdown-item text-danger logout-btn">
-                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                    </button>
-                </li>
-            </ul>
+            <li class="nav-item dropdown authenticated-only" style="display: none;">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle me-2 fs-5"></i>
+                    <span id="user-name">Usuario</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li>
+                        <h6 class="dropdown-header">
+                            <i class="fas fa-user me-1"></i>Mi Cuenta
+                        </h6>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="irAPerfil(); return false;">
+                            <i class="fas fa-edit me-2"></i>Mi Perfil
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <button type="button" class="dropdown-item text-danger logout-btn">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </li>
+                </ul>
+            </li>
         </ul>
     </div>
 </nav>

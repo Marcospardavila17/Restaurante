@@ -1,9 +1,41 @@
-// perfil.js
+// perfil.js - VERSIÓN CORREGIDA
 
 document.addEventListener('DOMContentLoaded', function() {
+    // ✅ SOLO EJECUTAR EN LA PÁGINA DE PERFIL
+    if (!document.getElementById('perfilForm')) {
+        console.log('No estamos en la página de perfil, saltando perfil.js');
+        return;
+    }
+
+    console.log('=== PERFIL.JS CARGADO EN PÁGINA CORRECTA ===');
     initializePerfilForm();
     loadUserProfile();
 });
+
+function loadUserProfile() {
+    console.log('=== CARGANDO PERFIL DE USUARIO ===');
+
+    const jwt = localStorage.getItem('jwt');
+    const userName = localStorage.getItem('userName');
+
+    console.log('JWT exists:', !!jwt);
+    console.log('UserName:', userName);
+
+    if (!jwt) {
+        console.log('❌ No hay JWT, mostrando error');
+        showErrorMessage('No estás autenticado. Redirigiendo al login...');
+        setTimeout(() => {
+            window.location.href = '/auth/login';
+        }, 2000);
+        return;
+    }
+
+    // Mostrar información del usuario actual
+    updateCurrentUserInfo(userName);
+
+    // Cargar datos del perfil desde el servidor
+    fetchUserProfile(jwt);
+}
 
 function initializePerfilForm() {
     const perfilForm = document.getElementById('perfilForm');
