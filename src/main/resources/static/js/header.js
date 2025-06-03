@@ -1,98 +1,100 @@
-// header.js
+// header.js - VERSIÓN ANTI-BUCLES
 
 document.addEventListener('DOMContentLoaded', function() {
-    initializeHeader();
+    console.log('=== HEADER CARGADO ===');
+
+    // ✅ EVITAR MÚLTIPLES INICIALIZACIONES
+    if (window.headerInitialized) {
+        console.log('Header ya inicializado, saltando...');
+        return;
+    }
+    window.headerInitialized = true;
+
+    // ✅ DELAY PARA PERMITIR QUE localStorage SE ESTABILICE
+    setTimeout(() => {
+        initializeHeader();
+    }, 300);
+
     setupLogoutHandlers();
     updateCartCount();
 });
 
-// Función principal de inicialización del header
 function initializeHeader() {
-    const jwt = localStorage.getItem('jwt');
-    const userType = localStorage.getItem('userType');
-    const userName = localStorage.getItem('userName');
+    console.log('=== INICIALIZANDO HEADER ===');
 
-    if (jwt && userType && userName) {
-        updateHeaderForAuthenticatedUser(userType, userName);
-    } else {
-        updateHeaderForGuestUser();
+    // ✅ VERIFICACIÓN MÚLTIPLE CON REINTENTOS
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    function tryInitialize() {
+        attempts++;
+        console.log(`Intento ${attempts} de inicialización`);
+
+        const jwt = localStorage.getItem('jwt');
+        const userType = localStorage.getItem('userType');
+        const userName = localStorage.getItem('userName');
+
+        console.log('JWT exists:', !!jwt);
+        console.log('UserType:', userType);
+        console.log('UserName:', userName);
+        console.log('UserName type:', typeof userName);
+
+        // ✅ VERIFICACIÓN MÁS ROBUSTA
+        if (jwt && userType && userName &&
+            userType !== 'undefined' && userName !== 'undefined' &&
+            userType !== 'null' && userName !== 'null' &&
+            userType.length > 0 && userName.length > 0) {
+
+            console.log('✅ Usuario autenticado:', userName);
+            updateHeaderForAuthenticatedUser(userType, userName);
+            return true; // Éxito
+        } else {
+            console.log('❌ Usuario NO autenticado - Intento:', attempts);
+            console.log('Datos localStorage:', { jwt: !!jwt, userType, userName });
+
+            // ✅ REINTENTAR SI NO ES EL ÚLTIMO INTENTO
+            if (attempts < maxAttempts) {
+                console.log('Reintentando en 200ms...');
+                setTimeout(tryInitialize, 200);
+                return false;
+            } else {
+                console.log('Máximo de intentos alcanzado, mostrando como invitado');
+                updateHeaderForGuestUser();
+                return false;
+            }
+        }
     }
+
+    tryInitialize();
 }
 
-// Actualizar header para usuario autenticado
+// ✅ RESTO DE FUNCIONES SIN CAMBIOS...
 function updateHeaderForAuthenticatedUser(userType, userName) {
-    // Ocultar enlaces de invitado
+    console.log('Actualizando header para:', userType, userName);
     hideGuestLinks();
-
-    // Mostrar enlaces de usuario autenticado
     showAuthenticatedLinks();
-
-    // Actualizar nombre de usuario
     updateUserName(userName);
-
-    // Mostrar enlaces específicos del rol
     showLinksForUserType(userType);
 }
 
-// Actualizar header para usuario invitado
 function updateHeaderForGuestUser() {
+    console.log('Mostrando header para invitado');
     showGuestLinks();
     hideAuthenticatedLinks();
 }
 
-// Mostrar enlaces específicos según tipo de usuario
 function showLinksForUserType(userType) {
-    // Ocultar todos los enlaces específicos de rol
+    console.log('Mostrando enlaces para tipo:', userType);
     hideAllRoleLinks();
-
-    // Mostrar enlaces del rol actual
     const roleClass = userType.toLowerCase() + '-only';
     const roleLinks = document.querySelectorAll('.' + roleClass);
+    console.log('Enlaces encontrados para', roleClass, ':', roleLinks.length);
     roleLinks.forEach(link => {
         link.style.display = 'block';
     });
 }
 
-// Configurar manejadores de logout
-function setupLogoutHandlers() {
-    const logoutButtons = document.querySelectorAll('.logout-btn');
-    logoutButtons.forEach(button => {
-        button.addEventListener('click', handleLogout);
-    });
-}
-
-// Manejar logout
-function handleLogout(event) {
-    event.preventDefault();
-
-    // Limpiar localStorage
-    clearAuthenticationData();
-
-    // Mostrar mensaje de confirmación
-    showLogoutMessage();
-
-    // Redirigir después de un breve delay
-    setTimeout(() => {
-        window.location.href = '/';
-    }, 1000);
-}
-
-// Actualizar contador del carrito
-function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('carrito') || '[]');
-    const cartCount = document.getElementById('carrito-count');
-
-    if (cartCount) {
-        if (cart.length > 0) {
-            cartCount.textContent = cart.length;
-            cartCount.style.display = 'inline';
-        } else {
-            cartCount.style.display = 'none';
-        }
-    }
-}
-
-// Funciones auxiliares
+// ✅ RESTO DE FUNCIONES AUXILIARES...
 function hideGuestLinks() {
     const guestLinks = document.querySelectorAll('.guest-only');
     guestLinks.forEach(link => link.style.display = 'none');
@@ -104,19 +106,23 @@ function showGuestLinks() {
 }
 
 function hideAuthenticatedLinks() {
-    const authLinks = document.querySelectorAll('.auth-only');
+    const authLinks = document.querySelectorAll('.authenticated-only');
     authLinks.forEach(link => link.style.display = 'none');
 }
 
 function showAuthenticatedLinks() {
-    const authLinks = document.querySelectorAll('.auth-only');
+    const authLinks = document.querySelectorAll('.authenticated-only');
     authLinks.forEach(link => link.style.display = 'block');
 }
 
 function updateUserName(userName) {
+    console.log('Actualizando nombre de usuario a:', userName);
     const userNameSpan = document.getElementById('user-name');
     if (userNameSpan) {
         userNameSpan.textContent = userName;
+        console.log('✅ Nombre actualizado correctamente');
+    } else {
+        console.error('❌ Elemento user-name no encontrado');
     }
 }
 
@@ -127,33 +133,38 @@ function hideAllRoleLinks() {
     });
 }
 
+function setupLogoutHandlers() {
+    const logoutButtons = document.querySelectorAll('.logout-btn');
+    logoutButtons.forEach(button => {
+        button.addEventListener('click', handleLogout);
+    });
+}
+
+function handleLogout(event) {
+    event.preventDefault();
+    console.log('Cerrando sesión...');
+    clearAuthenticationData();
+    window.location.href = '/';
+}
+
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('carrito') || '[]');
+    const cartCount = document.getElementById('carrito-count');
+    if (cartCount) {
+        if (cart.length > 0) {
+            cartCount.textContent = cart.length;
+            cartCount.style.display = 'inline';
+        } else {
+            cartCount.style.display = 'none';
+        }
+    }
+}
+
 function clearAuthenticationData() {
+    console.log('Limpiando datos de autenticación...');
     localStorage.removeItem('jwt');
     localStorage.removeItem('userType');
     localStorage.removeItem('userName');
     localStorage.removeItem('carrito');
+    window.headerInitialized = false; // ✅ RESETEAR FLAG
 }
-
-function showLogoutMessage() {
-    // Crear toast de Bootstrap para mostrar mensaje
-    const toastContainer = document.getElementById('toast-container');
-    if (toastContainer) {
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-white bg-success border-0';
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">
-                    Sesión cerrada correctamente
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
-        toastContainer.appendChild(toast);
-
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-    }
-}
-
-// Función pública para actualizar carrito (llamada desde otras páginas)
-window.updateHeaderCartCount = updateCartCount;

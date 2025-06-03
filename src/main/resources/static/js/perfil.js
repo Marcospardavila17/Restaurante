@@ -12,30 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
 });
 
-function loadUserProfile() {
-    console.log('=== CARGANDO PERFIL DE USUARIO ===');
-
-    const jwt = localStorage.getItem('jwt');
-    const userName = localStorage.getItem('userName');
-
-    console.log('JWT exists:', !!jwt);
-    console.log('UserName:', userName);
-
-    if (!jwt) {
-        console.log('❌ No hay JWT, mostrando error');
-        showErrorMessage('No estás autenticado. Redirigiendo al login...');
-        setTimeout(() => {
-            window.location.href = '/auth/login';
-        }, 2000);
-        return;
-    }
-
-    // Mostrar información del usuario actual
-    updateCurrentUserInfo(userName);
-
-    // Cargar datos del perfil desde el servidor
-    fetchUserProfile(jwt);
-}
 
 function initializePerfilForm() {
     const perfilForm = document.getElementById('perfilForm');
@@ -233,15 +209,6 @@ function setupFieldValidation() {
 }
 
 // Funciones auxiliares
-function showErrorMessage(message) {
-    const errorDiv = document.getElementById('mensajeError');
-    const textSpan = errorDiv.querySelector('.mensaje-texto');
-    textSpan.textContent = message;
-    errorDiv.style.display = 'block';
-
-    // Scroll al mensaje
-    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
 
 function showSuccessMessage(message) {
     const successDiv = document.getElementById('mensajeExito');

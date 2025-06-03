@@ -41,10 +41,6 @@ public class UsuarioService {
      */
     public Usuario save(Usuario usuario) {
         System.out.println("UsuarioService Guardando usuario: " + usuario);
-        // Cifra la contraseña solo si no está ya cifrada (los hashes BCrypt empiezan con $2a$ o $2b$)
-        if (usuario.getContrasena() != null && !usuario.getContrasena().startsWith("$2a$") && !usuario.getContrasena().startsWith("$2b$")) {
-            usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
-        }
         return usuarioRepository.save(usuario);
     }
 
@@ -60,10 +56,10 @@ public class UsuarioService {
             usuario.setTelefono(datos.getTelefono());
             usuario.setNumeroTarjetaCredito(datos.getNumeroTarjetaCredito());
 
-            if (datos.getContrasena() != null && !datos.getContrasena().isEmpty()) {
-                usuario.setContrasena(datos.getContrasena());
+            // Cifra la contraseña solo si no está ya cifrada (los hashes BCrypt empiezan con $2a$ o $2b$)
+            if (usuario.getContrasena() != null && !datos.getContrasena().isEmpty() && !usuario.getContrasena().startsWith("$2a$") && !usuario.getContrasena().startsWith("$2b$")) {
+                usuario.setContrasena(passwordEncoder.encode(datos.getContrasena()));
             }
-
             return this.save(usuario);
         });
     }

@@ -94,8 +94,8 @@ function handleRegistrationSuccess(data) {
     showSuccessMessage('¡Cuenta creada exitosamente! Redirigiendo al menú...');
 
     localStorage.setItem('jwt', data.accessToken);
-    localStorage.setItem('userType', data.tipoUsuario);
-    localStorage.setItem('userName', data.nombreUsuario);
+    localStorage.setItem('userType', data.userType);
+    localStorage.setItem('userName', data.userName);
 
     // Redirección automática al menú después de 2 segundos
     setTimeout(() => {
@@ -150,20 +150,6 @@ function showErrorMessage(message) {
     errorDiv.style.display = 'block';
 
     errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function showSuccessMessage(message) {
-    const successDiv = document.getElementById('mensajeExito');
-    const textSpan = successDiv.querySelector('.mensaje-texto');
-    textSpan.textContent = message;
-    successDiv.style.display = 'block';
-
-    successDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function clearMessages() {
-    document.getElementById('mensajeError').style.display = 'none';
-    document.getElementById('mensajeExito').style.display = 'none';
 }
 
 function showLoadingState(loading) {

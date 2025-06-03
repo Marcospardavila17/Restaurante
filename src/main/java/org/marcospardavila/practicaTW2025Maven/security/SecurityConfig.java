@@ -62,11 +62,13 @@ public class SecurityConfig {
                                 "/test", "/test/**", "/WEB-INF/jsp/**"
                         ).permitAll()
                         .requestMatchers("/cliente/perfil").permitAll()
-                        .requestMatchers("/admin/usuarios", "/personal/pedidos").permitAll()
+
                         // Rutas protegidas por rol
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/personal/**").hasRole("PERSONAL")
                         .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+
                         // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 )
