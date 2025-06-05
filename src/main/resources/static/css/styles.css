@@ -1,0 +1,9 @@
+/* En tu archivo CSS (ej: styles.css) */
+.admin-only {
+    display: block !important;
+}
+
+/* Si usas Bootstrap */
+.nav-item.admin-only {
+    display: block !important;
+}
