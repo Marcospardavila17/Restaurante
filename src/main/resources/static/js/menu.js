@@ -26,6 +26,7 @@ function renderMenu(productos) {
 
     // Agrupar productos por categoría
     const categorias = {};
+
     productos.forEach(p => {
         if (!categorias[p.categoria]) categorias[p.categoria] = [];
         categorias[p.categoria].push(p);
@@ -37,10 +38,11 @@ function renderMenu(productos) {
     Object.keys(categorias).forEach(cat => {
         html += `<h2 class="mt-4">${cat}</h2><div class="row">`;
         categorias[cat].forEach(p => {
+            const imageUrl = p.imagen ? `/images/${p.imagen}` : '';
             html += `
             <div class="col">
                 <div class="card h-100 producto-card shadow-sm border-0">
-                    ${p.imagen ? `<img src="${p.imagen}" class="card-img-top producto-img" alt="Imagen de ${p.nombre}">` : ''}
+                    ${imageUrl ? `<img src="${imageUrl}" class="card-img-top producto-img" alt="Imagen de ${p.nombre}">` : ''}
                     <div class="card-body">
                         <div>
                             <h5 class="card-title text-success">${p.nombre}</h5>

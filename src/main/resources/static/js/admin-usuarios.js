@@ -1,9 +1,12 @@
-// admin-usuarios.js
+console.log('admin-usuarios.js cargado ***********************');
 
-document.addEventListener('DOMContentLoaded', function() {
+function initializeAdminUsuarios() {
+    console.log('Inicializando funciones de admin-usuarios.js...');
     cargarUsuarios();
     setupFormulario();
-});
+    console.log('Usuarios y formulario inicializados.');
+}
+
 
 function setupFormulario() {
     const form = document.getElementById('userForm');
@@ -12,9 +15,17 @@ function setupFormulario() {
     }
 }
 
-// ✅ PROBAR GET /api/usuarios
 function cargarUsuarios() {
     const jwt = localStorage.getItem('jwt');
+    console.log(jwt);
+    console.log("Estamos en carga usuarios en admin-usuarios.js");
+
+    // ✅ Verificar que el elemento existe antes de continuar
+    const tablaUsuariosBody  = document.getElementById('tablaUsuarios');
+    if (!tablaUsuariosBody ) {
+        console.error('❌ Elemento tablaUsuarios no encontrado, reintentando...');
+        return;
+    }
 
     fetch('/api/usuarios', {
         method: 'GET',
@@ -24,6 +35,8 @@ function cargarUsuarios() {
         }
     })
         .then(response => {
+            console.log("Esa es la respuesta *******************");
+            console.log(response);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -35,14 +48,19 @@ function cargarUsuarios() {
         })
         .catch(error => {
             showErrorMessage('Error al cargar usuarios: ' + error.message);
-            document.getElementById('tablaUsuarios').innerHTML =
-                '<tr><td colspan="6" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+            if (tablaUsuariosBody ) {
+                tablaUsuariosBody .innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+            }
         });
+    console.log('Usuarios cargados correctamente o no *********************');
 }
 
 function mostrarUsuarios(usuarios) {
     const tbody = document.getElementById('tablaUsuarios');
-
+    if (!tbody) {
+        console.error('❌ Elemento tablaUsuarios no encontrado en mostrarUsuarios');
+        return;
+    }
     if (usuarios.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay usuarios registrados</td></tr>';
         return;
@@ -79,7 +97,6 @@ function getTipoBadgeColor(tipo) {
     }
 }
 
-// ✅ PROBAR GET /api/usuarios/{id}
 function verUsuario(id) {
     const jwt = localStorage.getItem('jwt');
 
@@ -104,7 +121,6 @@ function verUsuario(id) {
         });
 }
 
-// ✅ PROBAR PUT /api/usuarios/{id}
 function editarUsuario(id) {
     const jwt = localStorage.getItem('jwt');
 
@@ -136,7 +152,6 @@ function editarUsuario(id) {
         });
 }
 
-// ✅ PROBAR DELETE /api/usuarios/{id}
 function eliminarUsuario(id) {
     if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
         return;
@@ -176,7 +191,6 @@ function ocultarFormulario() {
     document.getElementById('formularioUsuario').style.display = 'none';
 }
 
-// ✅ PROBAR POST /api/usuarios (crear) y PUT /api/usuarios/{id} (actualizar)
 function handleFormSubmit(e) {
     e.preventDefault();
 
@@ -192,7 +206,6 @@ function handleFormSubmit(e) {
         direccion: document.getElementById('direccion').value || null
     };
 
-    // Solo incluir contraseña si se está creando o si se ha introducido una nueva
     const contrasena = document.getElementById('contrasena').value;
     if (!isEditing || contrasena) {
         userData.contrasena = contrasena;
@@ -227,7 +240,6 @@ function handleFormSubmit(e) {
         });
 }
 
-// Funciones auxiliares
 function showErrorMessage(message) {
     const errorDiv = document.getElementById('mensajeError');
     if (errorDiv) {

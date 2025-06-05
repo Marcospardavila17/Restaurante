@@ -26,6 +26,7 @@ public class UsuarioController {
 
     @GetMapping
     public List<Usuario> getAllUsuarios() {
+        System.out.println("************************cargando usuarios en getAllUsuarios***************");
         return usuarioService.findAll();
     }
 

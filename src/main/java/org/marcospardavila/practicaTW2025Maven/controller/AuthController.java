@@ -127,4 +127,13 @@ public class AuthController {
                         savedUser.getEmail()
                 ));
     }
+
+    @GetMapping("/check-admin")
+    public ResponseEntity<?> checkAdmin(Authentication authentication) {
+        if (authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRADOR"))) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
 }

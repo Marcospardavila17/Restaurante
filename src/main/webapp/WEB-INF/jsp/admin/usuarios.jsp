@@ -109,11 +109,11 @@
                             </tr>
                             </thead>
                             <tbody id="tablaUsuarios">
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Cargando usuarios...
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Cargando usuarios...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -132,10 +132,5 @@
         </div>
     </div>
 </div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<c:url value='/js/header.js' />"></script>
-<script src="<c:url value='/js/admin-usuarios.js' />"></script>
 </body>
 </html>

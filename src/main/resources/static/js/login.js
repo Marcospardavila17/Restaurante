@@ -58,7 +58,7 @@ function handleLogin(event) {
             console.log('Redirigiendo a página principal...');
             setTimeout(() => {
                 window.location.href = '/';
-            }, 10000);
+            }, 300);
         })
         .catch(error => {
             console.error('❌ Error en login:', error);
